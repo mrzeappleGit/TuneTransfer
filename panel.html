@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<body>
+  <link rel="stylesheet" href="panel.css" />
+  <div class="app">
+    <main class="main">
+      <p class="title">AEM Enhancements</p>
+      <div class="tab" style="padding: 0px !important; justify-content: center;">
+        <p id="enhancements" class="setting-text active">Enhancements</p>
+        <p id="pages" class="setting-text">Pages</p>
+      </div>
+      <div id="enhancementsContent">
+        <div class="setting-div">
+          <div class="inner-div">
+            <p class="setting-text">Title Fixer</p>
+            <div style="align-self: center;">
+              <label class="switch">
+                <input id="titleFixer" type="checkbox">
+                <span class="slider round"></span>
+              </label>
+            </div>
+          </div>
+          <div class="inner-div">
+            <p class="setting-text">Show Margin/Padding</p>
+            <div style="align-self: center;">
+              <label class="switch">
+                <input id="marginPaddingShow" type="checkbox">
+                <span class="slider round"></span>
+              </label>
+            </div>
+          </div>
+          <div class="inner-div">
+            <p class="setting-text">Show Links</p>
+            <div style="align-self: center;">
+              <label class="switch">
+                <input id="linkShow" type="checkbox">
+                <span class="slider round"></span>
+              </label>
+            </div>
+          </div>
+          <div class="inner-div">
+            <p class="setting-text">Show Copy Icon</p>
+            <div style="align-self: center;">
+              <label class="switch">
+                <input id="copyIcon" type="checkbox">
+                <span class="slider round"></span>
+              </label>
+            </div>
+          </div>
+          <div class="inner-div">
+            <p class="setting-text">Change Dialog Size</p>
+            <div style="align-self: center; padding-left: 42px;">
+              <label class="switch">
+                <input id="dialogSize" type="checkbox">
+                <span class="slider round"></span>
+              </label>
+              <label>
+                <input id="dialogNumber" type="number" style="width: 50px;">
+              </label>
+            </div>
+          </div>
+          <div class="inner-div">
+            <p class="setting-text">Show Sidbar Toggle</p>
+            <div style="align-self: center;">
+              <label class="switch">
+                <input id="imageSidbarIcon" type="checkbox">
+                <span class="slider round"></span>
+              </label>
+            </div>
+          </div>
+        </div>
+        <div id="isActive">
+          <p class='setting-text'>Run on this page: </p> <div style='align-self: center;'><label class='switch'><input type='checkbox' id='runOnPage'><span class='slider round'></span></label></div>
+        </div>
+      </div>
+      <div id="pagesContent">
+        
+      </div>
+    </main>
+  </div>
+  <script type="module" src="./js/panel.js"></script>
+  <script type="module" src="./js/titleFixer.js"></script>
+  <script type="module" src="./js/panelTab.js"></script>
+</body>
+</html>
