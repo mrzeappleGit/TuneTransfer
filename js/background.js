@@ -1,15 +1,26 @@
-//REPLACE WITH CLIENT_ID
-const CLIENT_ID = encodeURIComponent('CLIENT_ID');
-const RESPONSE_TYPE = encodeURIComponent('token');
-//PLACE EXTENSION ID HERE
-const REDIRECT_URI = encodeURIComponent('https://EXTENSTION ID.chromiumapp.org/');
+let CLIENT_ID;
+const RESPONSE_TYPE = encodeURIComponent('code');
+const REDIRECT_URI = encodeURIComponent('https://ikfiobfhldajejjfnolhfjclbhoejlfk.chromiumapp.org/');
 const SCOPE = encodeURIComponent('playlist-read-private playlist-read-collaborative playlist-modify-public playlist-modify-private user-read-private user-read-email');
-const SHOW_DIALOG = encodeURIComponent('true');
+const SHOW_DIALOG = encodeURIComponent('false');
+let REFRESH_TOKEN = '';
+let CLIENT_SECRET; // You need to define this
 let STATE = '';
 let ACCESS_TOKEN = '';
 
 let user_signed_in = false;
-
+function getClientSecret() {
+    fetch('https://gajfumjw03.execute-api.us-east-2.amazonaws.com/default/TuneTransferAPIKEYS', {
+        method: 'POST',
+      })
+      .then(response => response.json())
+      .then(apiKey => {
+        // You now have your API key
+        CLIENT_SECRET = apiKey.split(",", 2)[0];
+        CLIENT_ID = apiKey.split(",", 2)[1];
+      });
+}
+getClientSecret();
 function create_spotify_endpoint() {
     STATE = encodeURIComponent('meet' + Math.random().toString(36).substring(2, 15));
 
@@ -45,22 +56,19 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                         sendResponse({ message: 'fail' });
                     } else {
                         console.log(redirect_url);
-                        ACCESS_TOKEN = redirect_url.substring(redirect_url.indexOf('access_token=') + 13);
+                        ACCESS_TOKEN = redirect_url.substring(redirect_url.indexOf('code=') + 5);
                         ACCESS_TOKEN = ACCESS_TOKEN.substring(0, ACCESS_TOKEN.indexOf('&'));
+                        console.log(ACCESS_TOKEN);
                         let state = redirect_url.substring(redirect_url.indexOf('state=') + 6);
 
                         if (state === STATE) {
-                            console.log("SUCCESS")
                             user_signed_in = true;
-                            //store access token in chrome extension local storage
-                            chrome.storage.local.set({ "spotifyAccessToken": ACCESS_TOKEN }, function(){
-                                //  A data saved callback omg so fancy
-                            });                            
                             setTimeout(() => {
                                 ACCESS_TOKEN = '';
                                 user_signed_in = false;
-                                chrmoe.storage.local.remove("spotifyAccessToken");
+                                chrome.storage.local.remove("spotifyAccessToken");
                             }, 3600000);
+                            exchangeCodeForToken(ACCESS_TOKEN);
 
                             chrome.action.setPopup({ popup: '../popup-signed-in.html' }, () => {
                                 sendResponse({ message: 'success' });
@@ -78,14 +86,142 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         user_signed_in = false;
         chrome.action.setPopup({ popup: './popup.html' }, () => {
             sendResponse({ message: 'success' });
-            chrmoe.storage.local.remove("spotifyAccessToken");
+            chrome.storage.local.remove("spotifyAccessToken");
         });
 
         return true;
     } else if (request.message === 'get_access_token') {
-        chrome.storage.local.get({ "spotifyAccessToken": ACCESS_TOKEN }, function(){
-            clientAccessToken = ACCESS_TOKEN;
-        });  
-        sendResponse({ message: ACCESS_TOKEN });
+        if(ACCESS_TOKEN == '' || ACCESS_TOKEN == undefined || ACCESS_TOKEN == null || ACCESS_TOKEN == " "){
+            chrome.storage.local.get(["spotifyAccessToken", "tokenCreationTime"], async function(result) {
+                ACCESS_TOKEN = await result.spotifyAccessToken;
+                let tokenCreationTime = result.tokenCreationTime;
+    
+                const ONE_HOUR = 3600 * 1000; // 1 hour in milliseconds
+    
+                if (Date.now() - tokenCreationTime > ONE_HOUR) {
+                    console.log("Token expired. Refreshing...");
+                    chrome.storage.local.remove("spotifyAccessToken");
+                    chrome.storage.local.remove("tokenCreationTime");
+                    getAccessToken();
+                }
+    
+                console.log(ACCESS_TOKEN);
+                sendResponse({ message: ACCESS_TOKEN });
+            });
+        }else{
+            console.log(ACCESS_TOKEN);
+            sendResponse({ message: ACCESS_TOKEN });
+        }
     }
 });
+
+function getAccessToken() {
+    chrome.identity.launchWebAuthFlow({
+        url: create_spotify_endpoint(),
+        interactive: true
+    }, function (redirect_url) {
+        if (chrome.runtime.lastError) {
+            sendResponse({ message: 'fail' });
+        } else {
+            if (redirect_url.includes('callback?error=access_denied')) {
+                sendResponse({ message: 'fail' });
+            } else {
+                console.log(redirect_url);
+                ACCESS_TOKEN = redirect_url.substring(redirect_url.indexOf('code=') + 5);
+                ACCESS_TOKEN = ACCESS_TOKEN.substring(0, ACCESS_TOKEN.indexOf('&'));
+                console.log(ACCESS_TOKEN);
+                let state = redirect_url.substring(redirect_url.indexOf('state=') + 6);
+
+                if (state === STATE) {
+                    user_signed_in = true;
+                    setTimeout(() => {
+                        ACCESS_TOKEN = '';
+                        user_signed_in = false;
+                        chrome.storage.local.remove("spotifyAccessToken");
+                    }, 3600000);
+                    exchangeCodeForToken(ACCESS_TOKEN);
+
+                    chrome.action.setPopup({ popup: '../popup-signed-in.html' }, () => {
+                        sendResponse({ message: 'success' });
+                    });
+                } else {
+                    sendResponse({ message: 'fail' });
+                }
+            }
+        }
+    });
+}
+
+async function exchangeCodeForToken(code) {
+    const body = new URLSearchParams();
+    body.append('grant_type', 'authorization_code');
+    body.append('code', code);
+    body.append('redirect_uri', decodeURIComponent(REDIRECT_URI));
+    body.append('client_id', decodeURIComponent(CLIENT_ID));
+    body.append('client_secret', CLIENT_SECRET);
+
+    try {
+        const response = await fetch('https://accounts.spotify.com/api/token', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            body: body
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            console.log(data);
+            ACCESS_TOKEN = data.access_token;
+            REFRESH_TOKEN = data.refresh_token;
+            clientAccessToken = ACCESS_TOKEN;
+    
+            const tokenCreationTime = Date.now(); // Get the current time
+    
+            chrome.storage.local.set({ 
+                "spotifyAccessToken": ACCESS_TOKEN, 
+                "tokenCreationTime": tokenCreationTime  // Save the creation time
+            }, function(){
+                //  A data saved callback omg so fancy
+            });
+            
+            // Save these tokens as needed...
+        } else {
+            console.error('Response:', response.status, response.statusText);
+        }
+    } catch (error) {
+        console.error('An error occurred:', error);
+    }
+}
+
+// Refresh access_token using refresh_token
+async function refreshToken() {
+    const body = new URLSearchParams();
+    body.append('grant_type', 'refresh_token');
+    body.append('refresh_token', REFRESH_TOKEN);
+    body.append('client_id', CLIENT_ID);
+    body.append('client_secret', CLIENT_SECRET);
+
+    try {
+        const response = await fetch('https://accounts.spotify.com/api/token', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            body: body
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            ACCESS_TOKEN = data.access_token;
+            chrome.storage.local.set({ "spotifyAccessToken": ACCESS_TOKEN }, function(){
+                //  A data saved callback omg so fancy
+            });
+            // Save this token as needed...
+        } else {
+            console.error('Response:', response.status, response.statusText);
+        }
+    } catch (error) {
+        console.error('An error occurred:', error);
+    }
+}

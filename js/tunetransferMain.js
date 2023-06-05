@@ -1,4 +1,21 @@
 var clientAccessToken = null;
+var numTries = 0;
+function send_message() {
+    chrome.runtime.sendMessage({ message: 'get_access_token' }, function (response) {
+        if (response && response.message) {
+            clientAccessToken = response.message;
+            console.log(clientAccessToken);
+        } else {
+            console.log("No response received. Retrying in 1 second...");
+            numTries++;
+            if (numTries > 10) {
+
+            }else{
+                setTimeout(send_message, 1000); // wait 1 second before trying again
+            }
+        }
+    });
+}
 window.onload = function() {
     var tunetransferElement = document.createElement("button");
     tunetransferElement.id = "tunetransfer";
@@ -10,11 +27,9 @@ window.onload = function() {
     setTimeout(function() {
         if(document.querySelectorAll(".ytd-video-description-music-section-renderer") != null && document.querySelectorAll(".ytd-video-description-music-section-renderer").length > 0){
             document.getElementById("subscribe-button").insertAdjacentElement("afterEnd", tunetransferElement);
-            chrome.runtime.sendMessage({ message: 'get_access_token' }, function (response) {
-                    clientAccessToken = response.message;
-                }
-            );
-        }
+                    console.log("waiting for access token");
+                    send_message();
+            }
     }, 1000);
 };
 
@@ -52,11 +67,6 @@ async function fetchPlaylists(token, userId) {
 var spotifyPlaylists = [];
 //create spotify request for users playlist
 function spotifyGetPlaylists(){
-    //make sure spotify access token is valid
-    var spotifyAccessToken = localStorage.getItem("spotifyAccessToken");
-    if(spotifyAccessToken == null){
-        spotifyAccessToken = spotifyGetAccessToken();
-    }
     var userId = null;
     fetchProfile(clientAccessToken).then((profile) => {
         //get spotify user id from profile
@@ -92,7 +102,7 @@ function spotifyLookup(){
     var spotifySearchUrl = "https://api.spotify.com/v1/search?q=" + songTitle + "&type=track&limit=1";
     var spotifySearchRequest = new XMLHttpRequest();
     spotifySearchRequest.open("GET", spotifySearchUrl, true);
-    spotifySearchRequest.setRequestHeader("Authorization", "Bearer " + spotifyAccessToken);
+    spotifySearchRequest.setRequestHeader("Authorization", "Bearer " + clientAccessToken);
     spotifySearchRequest.onload = function() {
         if (this.status >= 200 && this.status < 400) {
             var spotifySearchResponse = JSON.parse(this.response);
