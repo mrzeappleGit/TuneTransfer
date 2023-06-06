@@ -25,7 +25,7 @@ window.onload = function() {
     tunetransferElement.innerHTML = "<img src='https://raw.githubusercontent.com/mrzeappleGit/TuneTransfer/master/assets/spotify-logo.png' id='tuneTransferImage' style='width: 20px; height: 20px; margin: 5px;'>";
     tunetransferElement.addEventListener("click", tuneTransferClick);
     setTimeout(function() {
-        if(document.querySelectorAll(".ytd-video-description-music-section-renderer") != null && document.querySelectorAll(".ytd-video-description-music-section-renderer").length > 0){
+        if(document.querySelectorAll('[itemprop="genre"]')[0].getAttribute('content') == "Music"){
             document.getElementById("subscribe-button").insertAdjacentElement("afterEnd", tunetransferElement);
                     console.log("waiting for access token");
                     send_message();
