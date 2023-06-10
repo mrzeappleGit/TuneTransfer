@@ -12,7 +12,7 @@
   },
   "devtools_page": "devtools.html",
   "host_permissions": [
-    "http://www.youtube.com/*", "https://www.youtube.com/*"
+    "http://www.youtube.com/watch*", "https://www.youtube.com/watch*"
   ],
   "web_accessible_resources": [{
     "matches": ["<all_urls>"],
@@ -23,7 +23,7 @@
   },
   "content_scripts": [
     {
-      "matches": ["http://www.youtube.com/*", "https://www.youtube.com/*"],
+      "matches": ["http://www.youtube.com/watch*", "https://www.youtube.com/watch*"],
       "js": ["./js/tunetransferMain.js", "./js/background.js"]
     }
   ],
@@ -31,7 +31,7 @@
     "default_popup": "popup.html"
   },
   "externally_connectable": {
-    "matches": ["https://www.youtube.com/*"]
+    "matches": ["https://www.youtube.com/watch*"]
   }
 
 }

@@ -102,7 +102,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                     console.log("Token expired. Refreshing...");
                     chrome.storage.local.remove("spotifyAccessToken");
                     chrome.storage.local.remove("tokenCreationTime");
-                    getAccessToken();
+                    getAccessToken(false);
                 }
     
                 console.log(ACCESS_TOKEN);
@@ -112,10 +112,19 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             console.log(ACCESS_TOKEN);
             sendResponse({ message: ACCESS_TOKEN });
         }
+    }else if(request.message === 'get_access_token_login'){
+        var accessWorked = getAccessToken(true);
+        if(accessWorked == "success"){
+            sendResponse({ message: 'success' });
+        }else{
+            sendResponse({ message: 'fail' });
+        }
+
     }
 });
+    
 
-function getAccessToken() {
+function getAccessToken(clickTry) {
     chrome.identity.launchWebAuthFlow({
         url: create_spotify_endpoint(),
         interactive: true
@@ -144,8 +153,12 @@ function getAccessToken() {
                     chrome.action.setPopup({ popup: '../popup-signed-in.html' }, () => {
                         sendResponse({ message: 'success' });
                     });
+                    if(clickTry == true){
+                        return "success";
+                    }
                 } else {
                     sendResponse({ message: 'fail' });
+                    return "fail";
                 }
             }
         }
