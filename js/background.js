@@ -1,6 +1,6 @@
 const RESPONSE_TYPE = encodeURIComponent('code');
 //Replace Redirect URI with your own
-const REDIRECT_URI = encodeURIComponent('https://ikfiobfhldajejjfnolhfjclbhoejlfk.chromiumapp.org/');
+const REDIRECT_URI = encodeURIComponent('');
 const SCOPE = encodeURIComponent('playlist-read-private playlist-read-collaborative playlist-modify-public playlist-modify-private user-read-private user-read-email');
 const SHOW_DIALOG = encodeURIComponent('false');
 let REFRESH_TOKEN = '';
