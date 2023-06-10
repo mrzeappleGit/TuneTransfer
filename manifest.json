@@ -19,12 +19,13 @@
     "resources": ["./assets/spotify-logo.png"]
   }],
   "background": {
-    "service_worker": "./js/background.js"
+    "service_worker": "./js/background.js",
+    "type": "module"
   },
   "content_scripts": [
     {
       "matches": ["http://www.youtube.com/watch*", "https://www.youtube.com/watch*"],
-      "js": ["./js/tunetransferMain.js", "./js/background.js"]
+      "js": ["./js/tunetransferMain.js", "./js/background.js", "./js/client.js"]
     }
   ],
   "action": {

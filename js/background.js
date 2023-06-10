@@ -1,26 +1,22 @@
-let CLIENT_ID;
 const RESPONSE_TYPE = encodeURIComponent('code');
+//Replace Redirect URI with your own
 const REDIRECT_URI = encodeURIComponent('https://ikfiobfhldajejjfnolhfjclbhoejlfk.chromiumapp.org/');
 const SCOPE = encodeURIComponent('playlist-read-private playlist-read-collaborative playlist-modify-public playlist-modify-private user-read-private user-read-email');
 const SHOW_DIALOG = encodeURIComponent('false');
 let REFRESH_TOKEN = '';
-let CLIENT_SECRET; // You need to define this
 let STATE = '';
 let ACCESS_TOKEN = '';
+let CLIENT_SECRET;
+let CLIENT_ID;
+var clientAccessToken;
 
 let user_signed_in = false;
-function getClientSecret() {
-    fetch('https://gajfumjw03.execute-api.us-east-2.amazonaws.com/default/TuneTransferAPIKEYS', {
-        method: 'POST',
-      })
-      .then(response => response.json())
-      .then(apiKey => {
-        // You now have your API key
-        CLIENT_SECRET = apiKey.split(",", 2)[0];
-        CLIENT_ID = apiKey.split(",", 2)[1];
-      });
+async function getAPIKeys(combinedClient){
+    setTimeout(() => {
+        CLIENT_SECRET = combinedClient.split(",", 2)[0];
+        CLIENT_ID = combinedClient.split(",", 2)[1];
+    }, 2000);
 }
-getClientSecret();
 function create_spotify_endpoint() {
     STATE = encodeURIComponent('meet' + Math.random().toString(36).substring(2, 15));
 
@@ -40,7 +36,10 @@ function create_spotify_endpoint() {
 }
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-    if (request.message === 'login') {
+    if (request.message.startsWith('get_api_keys')) {
+        var combinedClient = request.message.substring(13);
+        getAPIKeys(combinedClient);
+    }else if (request.message === 'login') {
         if (user_signed_in) {
             console.log("User is already signed in.");
         } else {
@@ -172,7 +171,7 @@ async function exchangeCodeForToken(code) {
     body.append('redirect_uri', decodeURIComponent(REDIRECT_URI));
     body.append('client_id', decodeURIComponent(CLIENT_ID));
     body.append('client_secret', CLIENT_SECRET);
-
+    console.log(body);
     try {
         const response = await fetch('https://accounts.spotify.com/api/token', {
             method: 'POST',
